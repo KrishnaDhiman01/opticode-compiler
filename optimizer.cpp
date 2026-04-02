@@ -5,7 +5,6 @@
 #include <unordered_map>
 using namespace std;
 
-// Function to check if string is number
 bool isNumber(string s) {
     for (char c : s) {
         if (!isdigit(c)) return false;
@@ -19,7 +18,6 @@ int main() {
     vector<string> code;
     string line;
 
-    // Input TAC
     while (true) {
         getline(cin, line);
         if (line == "END") break;
@@ -31,7 +29,8 @@ int main() {
 
     cout << "\n--- Optimized Code ---\n";
 
-    unordered_map<string, int> values; // for constant propagation
+    unordered_map<string, int> values;          // constant propagation
+    unordered_map<string, string> exprMap;      // CSE
 
     for (auto &l : code) {
         stringstream ss(l);
@@ -39,44 +38,54 @@ int main() {
 
         ss >> lhs >> eq >> op1 >> op >> op2;
 
-        // Case 1: Constant Folding
+        // DEAD CODE ELIMINATION (skip empty/bad lines)
+        if (lhs == "" || eq != "=") continue;
+
+        // CONSTANT FOLDING
         if (isNumber(op1) && isNumber(op2)) {
             int a = stoi(op1);
             int b = stoi(op2);
-            int result;
+            int result = 0;
 
             if (op == "+") result = a + b;
             else if (op == "-") result = a - b;
             else if (op == "*") result = a * b;
-            else if (op == "/") result = b != 0 ? a / b : 0;
+            else if (op == "/") result = (b != 0) ? a / b : 0;
 
             cout << lhs << " = " << result << endl;
-
             values[lhs] = result;
+            continue;
         }
 
-        // Case 2: Constant Propagation
-        else if (values.count(op1) && isNumber(op2)) {
-            int a = values[op1];
+        // CONSTANT PROPAGATION
+        if (values.count(op1)) op1 = to_string(values[op1]);
+        if (values.count(op2)) op2 = to_string(values[op2]);
+
+        if (isNumber(op1) && isNumber(op2)) {
+            int a = stoi(op1);
             int b = stoi(op2);
-            int result;
+            int result = 0;
 
             if (op == "+") result = a + b;
             else if (op == "-") result = a - b;
             else if (op == "*") result = a * b;
-            else if (op == "/") result = b != 0 ? a / b : 0;
+            else if (op == "/") result = (b != 0) ? a / b : 0;
 
             cout << lhs << " = " << result << endl;
             values[lhs] = result;
+            continue;
         }
 
-        // Default case
-        else {
-            cout << l << endl;
+        // COMMON SUBEXPRESSION ELIMINATION (CSE)
+        string expr = op1 + op + op2;
+        if (exprMap.count(expr)) {
+            cout << lhs << " = " << exprMap[expr] << endl;
+        } else {
+            cout << lhs << " = " << op1 << " " << op << " " << op2 << endl;
+            exprMap[expr] = lhs;
         }
     }
 
     cout << "\nOptimization Completed!\n";
-
     return 0;
 }

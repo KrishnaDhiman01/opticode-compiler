@@ -42,16 +42,16 @@ NUMBER     {DIGIT}+
 "{"          { return LBRACE; }
 "}"          { return RBRACE; }
 
-  /* INDENTED: Single line comment */
+  /*  Single line comment */
 "//".* { }
 
-  /* INDENTED: Multi-line comment (also fixed the regex here) */
+  /* Multi-line comment  */
 "/*"([^*]|\*+[^*/])*\*+"/"    { }
 
-  /* INDENTED: Whitespace */
+  /*  Whitespace */
 [ \t\n]+     { }
 
-  /* INDENTED: Error handling */
+  /* Error handling */
 . {
     printf("Invalid character: %s\n", yytext);
 }

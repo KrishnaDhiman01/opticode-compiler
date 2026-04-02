@@ -1,5 +1,8 @@
 compiler
 optimizer
+.DS_Store
+compiler
+optimizer
 lex.yy.c
 parser.tab.c
 parser.tab.h
