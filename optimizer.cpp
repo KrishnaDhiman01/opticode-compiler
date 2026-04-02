@@ -30,7 +30,9 @@ int main() {
     cout << "\n--- Optimized Code ---\n";
 
     unordered_map<string, int> values;          // constant propagation
-    unordered_map<string, string> exprMap;      // CSE
+
+    // First pass: constant folding + propagation storage
+    vector<string> tempOutput;
 
     for (auto &l : code) {
         stringstream ss(l);
@@ -38,29 +40,13 @@ int main() {
 
         ss >> lhs >> eq >> op1 >> op >> op2;
 
-        // DEAD CODE ELIMINATION (skip empty/bad lines)
         if (lhs == "" || eq != "=") continue;
 
-        // CONSTANT FOLDING
-        if (isNumber(op1) && isNumber(op2)) {
-            int a = stoi(op1);
-            int b = stoi(op2);
-            int result = 0;
-
-            if (op == "+") result = a + b;
-            else if (op == "-") result = a - b;
-            else if (op == "*") result = a * b;
-            else if (op == "/") result = (b != 0) ? a / b : 0;
-
-            cout << lhs << " = " << result << endl;
-            values[lhs] = result;
-            continue;
-        }
-
-        // CONSTANT PROPAGATION
+        // Replace with known values (propagation)
         if (values.count(op1)) op1 = to_string(values[op1]);
         if (values.count(op2)) op2 = to_string(values[op2]);
 
+        // Constant folding
         if (isNumber(op1) && isNumber(op2)) {
             int a = stoi(op1);
             int b = stoi(op2);
@@ -71,18 +57,38 @@ int main() {
             else if (op == "*") result = a * b;
             else if (op == "/") result = (b != 0) ? a / b : 0;
 
-            cout << lhs << " = " << result << endl;
             values[lhs] = result;
-            continue;
+            tempOutput.push_back(lhs + " = " + to_string(result));
+        } else {
+            tempOutput.push_back(lhs + " = " + op1 + " " + op + " " + op2);
         }
+    }
 
-        // COMMON SUBEXPRESSION ELIMINATION (CSE)
-        string expr = op1 + op + op2;
-        if (exprMap.count(expr)) {
-            cout << lhs << " = " << exprMap[expr] << endl;
+    // Second pass: apply propagation again for full optimization
+    for (auto &line : tempOutput) {
+        stringstream ss(line);
+        string lhs, eq, op1, op, op2;
+
+        ss >> lhs >> eq >> op1 >> op >> op2;
+
+        if (values.count(op1)) op1 = to_string(values[op1]);
+        if (values.count(op2)) op2 = to_string(values[op2]);
+
+        if (op == "") {
+            cout << line << endl;
+        } else if (isNumber(op1) && isNumber(op2)) {
+            int a = stoi(op1);
+            int b = stoi(op2);
+            int result = 0;
+
+            if (op == "+") result = a + b;
+            else if (op == "-") result = a - b;
+            else if (op == "*") result = a * b;
+            else if (op == "/") result = (b != 0) ? a / b : 0;
+
+            cout << lhs << " = " << result << endl;
         } else {
             cout << lhs << " = " << op1 << " " << op << " " << op2 << endl;
-            exprMap[expr] = lhs;
         }
     }
 
